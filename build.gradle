@@ -41,4 +41,6 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// 테스트 업로드 파일은 build/ 아래로 (clean 하면 같이 지워짐)
+	systemProperty 'fitbet.storage.local-dir', layout.buildDirectory.dir('test-uploads').get().asFile.absolutePath
 }

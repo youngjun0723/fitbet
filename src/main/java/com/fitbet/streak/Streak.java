@@ -55,4 +55,24 @@ public class Streak {
     public static Streak start(User user, Room room) {
         return new Streak(user, room);
     }
+
+    /**
+     * PRD 5.1-5: 인증 성공 시 Streak 갱신.
+     * 어제 인증했으면 이어서 +1, 아니면(최초/공백) 1부터 다시. maxStreak은 최고 기록만 갱신.
+     * 규칙을 서비스가 아닌 엔티티 안에 두면 DB/Spring 없이 순수 자바 단위 테스트가 가능하다.
+     */
+    public void recordVerification(LocalDate today) {
+        if (today.equals(lastVerifiedDate)) {
+            return; // 같은 날 두 번 반영되지 않게 (1일 1인증은 DB가 막지만 도메인도 안전하게)
+        }
+        boolean continued = today.minusDays(1).equals(lastVerifiedDate);
+        currentStreak = continued ? currentStreak + 1 : 1;
+        maxStreak = Math.max(maxStreak, currentStreak);
+        lastVerifiedDate = today;
+    }
+
+    /** PRD 2.3: 하루라도 실패하면 즉시 0. maxStreak은 유지. (M3 마감 스케줄러에서 사용) */
+    public void reset() {
+        currentStreak = 0;
+    }
 }
