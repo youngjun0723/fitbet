@@ -64,4 +64,9 @@ public class PenaltyLog extends BaseTimeEntity {
     public static PenaltyLog of(User user, Room room, LocalDate targetDate) {
         return new PenaltyLog(user, room, targetDate, room.getPenaltyAmount());
     }
+
+    /** 방장이 "정산 완료" 처리 (PRD 5.3, M4에서 사용) */
+    public void settle() {
+        this.settled = true;
+    }
 }

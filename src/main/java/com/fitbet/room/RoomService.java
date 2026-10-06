@@ -2,6 +2,7 @@ package com.fitbet.room;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -65,6 +66,23 @@ public class RoomService {
         }
         streakRepository.save(Streak.start(member.getUser(), member.getRoom()));
         return member;
+    }
+
+    /** 트랜잭션 안에서 DTO로 바꿔서 반환 — open-in-view=false라 밖에서 LAZY 필드를 건드리면 에러 */
+    @Transactional(readOnly = true)
+    public List<MyRoomSummary> findMyRooms(Long userId) {
+        return roomMemberRepository.findAllWithRoomByUserId(userId).stream()
+                .map(rm -> new MyRoomSummary(rm.getRoom().getId(), rm.getRoom().getTitle(),
+                        rm.getRoom().getPenaltyAmount(), rm.getRole()))
+                .toList();
+    }
+
+    public record MyRoomSummary(Long roomId, String title, int penaltyAmount, RoomRole role) {
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isMember(Long userId, Long roomId) {
+        return roomMemberRepository.existsByUserIdAndRoomId(userId, roomId);
     }
 
     private String issueInviteCode() {

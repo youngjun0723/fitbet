@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('방 참여')}"></head>
+<body class="bg-slate-50 text-slate-900">
+<main class="mx-auto min-h-screen max-w-md px-4 py-6">
+    <a href="/" class="text-sm text-slate-500">← 홈</a>
+    <h1 class="mb-6 mt-4 text-2xl font-extrabold">🔑 초대 코드로 참여</h1>
+
+    <form id="join-form" class="space-y-4 rounded-2xl bg-white p-6 shadow-sm">
+        <label for="inviteCode" class="block text-sm font-semibold">친구에게 받은 6자리 코드</label>
+        <input id="inviteCode" name="inviteCode" maxlength="6" minlength="6" required
+               autocomplete="off" autocapitalize="characters" th:value="${code}"
+               placeholder="ABC234"
+               class="w-full rounded-xl border border-slate-200 px-4 py-4 text-center font-mono text-2xl uppercase tracking-[0.4em] focus:border-orange-400 focus:outline-none">
+        <p id="form-error" class="hidden text-sm text-red-500"></p>
+        <button id="submit-btn" class="w-full rounded-xl bg-orange-500 py-3 font-bold text-white active:bg-orange-600 disabled:opacity-50">
+            참여하기
+        </button>
+    </form>
+</main>
+
+<script>
+  const form = document.getElementById('join-form');
+  form.inviteCode.addEventListener('input', (e) => {
+    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  });
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const errorBox = document.getElementById('form-error');
+    btn.disabled = true;
+    try {
+      const room = await api('/api/rooms/join', { method: 'POST', body: { inviteCode: form.inviteCode.value } });
+      location.href = '/rooms/' + room.roomId;
+    } catch (err) {
+      errorBox.textContent = err.code === 'ALREADY_JOINED'
+        ? '이미 참여한 방이에요. 홈의 "내 방" 목록에서 들어가 주세요.'
+        : err.message;
+      errorBox.classList.remove('hidden');
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

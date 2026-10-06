@@ -1,5 +1,6 @@
 package com.fitbet.room;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -50,6 +51,16 @@ class RoomApiControllerTest {
                         .content("{\"inviteCode\":\"" + inviteCode + "\"}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("ALREADY_JOINED"));
+
+        // 참여한 친구는 대시보드 조회 가능, 처음 보는 사람은 403
+        String roomId = objectMapper.readTree(body).get("roomId").asText();
+        mockMvc.perform(get("/api/rooms/{roomId}/dashboard", roomId).session(friendSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.room.title").value("헬창들의 모임"))
+                .andExpect(jsonPath("$.room.memberCount").value(2))
+                .andExpect(jsonPath("$.me.role").value("MEMBER"));
+        mockMvc.perform(get("/api/rooms/{roomId}/dashboard", roomId).session(login("외부인")))
+                .andExpect(status().isForbidden());
     }
 
     @Test

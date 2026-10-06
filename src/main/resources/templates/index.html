@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('홈')}"></head>
+<body class="bg-slate-50 text-slate-900">
+<main class="mx-auto min-h-screen max-w-md px-4 py-10" th:data-next="${next}">
+
+    <header class="mb-8 text-center">
+        <div class="text-5xl">🏋️</div>
+        <h1 class="mt-3 text-3xl font-extrabold tracking-tight">FitBet <span class="text-orange-500">핏벳</span></h1>
+        <p class="mt-2 text-sm text-slate-500">하루 한 장 인증, 안 하면 벌금 1,000원 💸</p>
+    </header>
+
+    <!-- 로그인 전 -->
+    <section th:unless="${username}" class="rounded-2xl bg-white p-6 shadow-sm">
+        <form id="login-form" class="space-y-3">
+            <label for="username" class="block text-sm font-semibold">닉네임으로 시작하기</label>
+            <input id="username" name="username" maxlength="30" required autocomplete="nickname"
+                   placeholder="친구들이 알아볼 닉네임"
+                   class="w-full rounded-xl border border-slate-200 px-4 py-3 text-base focus:border-orange-400 focus:outline-none">
+            <p id="login-error" class="hidden text-sm text-red-500"></p>
+            <button class="w-full rounded-xl bg-orange-500 py-3 font-bold text-white active:bg-orange-600">시작하기</button>
+        </form>
+        <p class="mt-3 text-center text-xs text-slate-400">처음이면 자동으로 가입돼요</p>
+    </section>
+
+    <!-- 로그인 후 -->
+    <section th:if="${username}">
+        <p class="mb-4 text-lg font-semibold"><span th:text="${username}">민수</span>님, 오늘도 한 장! 🔥</p>
+
+        <div class="mb-6 grid grid-cols-2 gap-3">
+            <a href="/rooms/new" class="rounded-2xl bg-orange-500 py-4 text-center font-bold text-white shadow-sm">➕ 방 만들기</a>
+            <a href="/join" class="rounded-2xl bg-white py-4 text-center font-bold shadow-sm">🔑 코드로 참여</a>
+        </div>
+
+        <h2 class="mb-2 text-sm font-semibold text-slate-500">내 방</h2>
+        <p th:if="${#lists.isEmpty(myRooms)}" class="rounded-2xl bg-white p-6 text-center text-sm text-slate-400 shadow-sm">
+            아직 참여한 방이 없어요.<br>방을 만들거나 친구에게 초대 코드를 받아 보세요.
+        </p>
+        <ul class="space-y-2">
+            <li th:each="r : ${myRooms}">
+                <a th:href="@{/rooms/{id}(id=${r.roomId})}"
+                   class="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm active:bg-slate-100">
+                    <div>
+                        <p class="font-semibold" th:text="${r.title}">헬창들의 모임</p>
+                        <p class="text-xs text-slate-400">벌금 <span th:text="${#numbers.formatInteger(r.penaltyAmount, 1, 'COMMA')}">1,000</span>원</p>
+                    </div>
+                    <span th:if="${r.role.name() == 'HOST'}" class="rounded-full bg-orange-100 px-2 py-1 text-xs font-semibold text-orange-600">방장</span>
+                </a>
+            </li>
+        </ul>
+    </section>
+</main>
+
+<script>
+  const form = document.getElementById('login-form');
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errorBox = document.getElementById('login-error');
+    try {
+      await api('/api/users/login', { method: 'POST', body: { username: form.username.value } });
+      // next는 서버에서 내부 경로만 남기도록 걸러서 내려준 값
+      location.href = document.querySelector('main').dataset.next || '/';
+    } catch (err) {
+      errorBox.textContent = err.message;
+      errorBox.classList.remove('hidden');
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,6 +1,8 @@
 package com.fitbet.room;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,6 +25,12 @@ import lombok.RequiredArgsConstructor;
 public class RoomApiController {
 
     private final RoomService roomService;
+    private final DashboardService dashboardService;
+
+    @GetMapping("/{roomId}/dashboard")
+    public DashboardResponse dashboard(@LoginUserId Long userId, @PathVariable Long roomId) {
+        return dashboardService.getDashboard(userId, roomId);
+    }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

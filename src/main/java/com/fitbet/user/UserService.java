@@ -1,5 +1,7 @@
 package com.fitbet.user;
 
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,5 +18,10 @@ public class UserService {
     public User loginOrRegister(String username) {
         return userRepository.findByUsername(username)
                 .orElseGet(() -> userRepository.save(User.create(username)));
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<String> findUsername(Long userId) {
+        return userRepository.findById(userId).map(User::getUsername);
     }
 }

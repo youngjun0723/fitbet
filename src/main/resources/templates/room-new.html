@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('방 만들기')}"></head>
+<body class="bg-slate-50 text-slate-900">
+<main class="mx-auto min-h-screen max-w-md px-4 py-6">
+    <a href="/" class="text-sm text-slate-500">← 홈</a>
+    <h1 class="mb-6 mt-4 text-2xl font-extrabold">➕ 방 만들기</h1>
+
+    <form id="room-form" class="space-y-5 rounded-2xl bg-white p-6 shadow-sm">
+        <div>
+            <label for="title" class="mb-1 block text-sm font-semibold">방 제목</label>
+            <input id="title" name="title" maxlength="50" required placeholder="예) 헬창들의 모임"
+                   class="w-full rounded-xl border border-slate-200 px-4 py-3 text-base focus:border-orange-400 focus:outline-none">
+        </div>
+        <div>
+            <label for="penaltyAmount" class="mb-1 block text-sm font-semibold">미인증 벌금 (1회)</label>
+            <div class="flex items-center gap-2">
+                <input id="penaltyAmount" name="penaltyAmount" type="number" inputmode="numeric"
+                       min="100" max="100000" step="100" value="1000" required
+                       class="w-full rounded-xl border border-slate-200 px-4 py-3 text-base focus:border-orange-400 focus:outline-none">
+                <span class="text-slate-500">원</span>
+            </div>
+            <p class="mt-1 text-xs text-slate-400">100원 ~ 100,000원</p>
+        </div>
+        <p id="form-error" class="hidden text-sm text-red-500"></p>
+        <button id="submit-btn" class="w-full rounded-xl bg-orange-500 py-3 font-bold text-white active:bg-orange-600 disabled:opacity-50">
+            방 만들기
+        </button>
+    </form>
+</main>
+
+<script>
+  const form = document.getElementById('room-form');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const errorBox = document.getElementById('form-error');
+    btn.disabled = true;
+    try {
+      const room = await api('/api/rooms', {
+        method: 'POST',
+        body: { title: form.title.value, penaltyAmount: Number(form.penaltyAmount.value) },
+      });
+      location.href = '/rooms/' + room.roomId;
+    } catch (err) {
+      errorBox.textContent = err.message;
+      errorBox.classList.remove('hidden');
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('대시보드')}"></head>
+<body class="bg-slate-50 text-slate-900">
+<main id="app" class="mx-auto min-h-screen max-w-md px-4 pb-32 pt-4" th:data-room-id="${roomId}">
+
+    <!-- 헤더: 방 제목 + 초대 -->
+    <header class="mb-4">
+        <a href="/" class="text-sm text-slate-500">← 내 방</a>
+        <div class="mt-2 flex items-start justify-between gap-2">
+            <h1 id="room-title" class="text-2xl font-extrabold leading-tight">불러오는 중…</h1>
+            <button id="invite-btn" type="button"
+                    class="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-semibold shadow-sm active:bg-slate-100">
+                🔗 초대 <span id="invite-code" class="font-mono"></span>
+            </button>
+        </div>
+        <p id="room-meta" class="mt-1 text-xs text-slate-400"></p>
+    </header>
+
+    <!-- ⏱️ 마감 타이머 -->
+    <section id="timer-card" class="mb-3 rounded-2xl bg-slate-900 p-5 text-white shadow-sm transition-colors">
+        <p class="text-xs opacity-70">오늘 인증 마감까지</p>
+        <p id="timer" class="mt-1 font-mono text-4xl font-bold tabular-nums">--:--:--</p>
+    </section>
+
+    <!-- 💰 벌금 풀 / 🔥 내 Streak -->
+    <section class="mb-3 grid grid-cols-2 gap-3">
+        <div class="rounded-2xl bg-white p-4 shadow-sm">
+            <p class="text-xs text-slate-400">💰 누적 벌금 풀</p>
+            <p id="penalty-pool" class="mt-1 text-xl font-bold">-</p>
+        </div>
+        <div class="rounded-2xl bg-white p-4 shadow-sm">
+            <p class="text-xs text-slate-400">🔥 내 연속 인증</p>
+            <p class="mt-1 text-xl font-bold"><span id="my-streak">-</span><span class="text-sm font-normal text-slate-400"> / 최고 <span id="my-max-streak">-</span></span></p>
+        </div>
+    </section>
+
+    <!-- 🚨 오늘 미인증자 -->
+    <section class="mb-6 rounded-2xl bg-white p-4 shadow-sm">
+        <h2 class="mb-2 text-sm font-semibold">🚨 아직 인증 안 한 멤버</h2>
+        <div id="missed-list" class="flex flex-wrap gap-2"></div>
+    </section>
+
+    <!-- 📸 오늘 피드 -->
+    <section>
+        <h2 class="mb-2 text-sm font-semibold text-slate-500">📸 오늘의 인증</h2>
+        <div id="feed" class="space-y-4"></div>
+    </section>
+</main>
+
+<!-- 하단 고정 CTA -->
+<div class="fixed inset-x-0 bottom-0 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-6">
+    <button id="cta" type="button" disabled
+            class="mx-auto block w-full max-w-md rounded-2xl bg-orange-500 py-4 text-lg font-bold text-white shadow-lg active:bg-orange-600 disabled:bg-slate-300 disabled:shadow-none">
+        불러오는 중…
+    </button>
+</div>
+
+<!-- 인증 업로드 모달 (PRD 6.2) -->
+<div id="upload-modal" class="fixed inset-0 z-50 hidden items-end justify-center bg-black/50 sm:items-center">
+    <form id="upload-form" class="w-full max-w-md rounded-t-3xl bg-white p-5 sm:rounded-3xl">
+        <div class="mb-4 flex items-center justify-between">
+            <h3 class="text-lg font-bold">오늘 운동 인증 📸</h3>
+            <button type="button" id="modal-close" class="text-2xl leading-none text-slate-400" aria-label="닫기">×</button>
+        </div>
+
+        <!-- accept + capture: 모바일에서 바로 카메라 실행 -->
+        <label id="photo-picker" for="photo"
+               class="flex aspect-square w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400">
+            <img id="preview" class="hidden h-full w-full object-cover" alt="선택한 사진 미리보기">
+            <span id="picker-hint" class="text-center"><span class="text-4xl">📷</span><br>눌러서 사진 찍기 / 고르기</span>
+        </label>
+        <input id="photo" name="photo" type="file" accept="image/*" capture="environment" class="hidden">
+
+        <div class="mt-3">
+            <input id="memo" name="memo" maxlength="100" placeholder="한 줄 메모 (선택)"
+                   class="w-full rounded-xl border border-slate-200 px-4 py-3 text-base focus:border-orange-400 focus:outline-none">
+            <p class="mt-1 text-right text-xs text-slate-400"><span id="memo-count">0</span>/100</p>
+        </div>
+
+        <p id="upload-error" class="mb-2 hidden text-sm text-red-500"></p>
+        <button id="upload-submit" disabled
+                class="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-3 font-bold text-white disabled:bg-slate-300">
+            <span id="upload-spinner" class="hidden h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+            <span id="upload-label">인증하기</span>
+        </button>
+    </form>
+</div>
+
+<script src="/js/dashboard.js"></script>
+</body>
+</html>
