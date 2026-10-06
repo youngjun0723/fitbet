@@ -64,7 +64,7 @@
 - [ ] **벌금 풀 분배 방식**: ① 방장(HOST)에게 모두 송금 후 회식비 사용 ② 무벌금자에게 균등 분배 (MVP 제안: ①)
 - [ ] **방 참여 당일 처리**: 가입 당일 마감 전 인증 못 하면 벌금을 부과할지 (MVP 제안: 참여 다음 날부터 적용)
 - [ ] 시즌 기간 정의 (예: 4주 고정 / 방장이 수동 종료)
-- [ ] 마감 스케줄러 실행 시각 (5.2의 기술 리스크 참고)
+- [x] 마감 스케줄러 실행 시각 → **다음 날 00:00:05 실행, targetDate = 어제** (2026-10-06 확정, 5.2 참고)
 
 ---
 
@@ -73,7 +73,7 @@
 | 영역 | 기술 |
 |---|---|
 | Backend | Java 17, Spring Boot 3.x, Spring Data JPA, Spring Validation |
-| Batch/Scheduler | Spring `@Scheduled` (매일 23:59 정산 로직 가동) |
+| Batch/Scheduler | Spring `@Scheduled` (매일 00:00:05에 전날 마감 처리) |
 | Database | H2 Database (개발/테스트용), MariaDB/MySQL (운영용) |
 | Frontend | Spring Boot Thymeleaf + Tailwind CSS (CDN), Vanilla JS |
 | Build | Gradle |
@@ -210,23 +210,15 @@ erDiagram
 6. 3~5를 하나의 `@Transactional`로 처리 (DB 실패 시 저장된 파일 삭제 보상 처리)
 
 ### 5.2 마감 스케줄러 (Midnight Cron)
-- Cron: `0 59 23 * * *` (zone = `Asia/Seoul`)
+- Cron: `5 0 0 * * *` (zone = `Asia/Seoul`) — **다음 날 00:00:05에 실행해서 `targetDate = 어제`를 마감** (2026-10-06 확정)
 
-**흐름:** 활성 RoomMember 전수 조회 ➔ 당일 ChallengeLog 없는 멤버 식별 ➔ PenaltyLog(1,000원) 레코드 생성 ➔ 해당 멤버 Streak 0 리셋
+**흐름:** 방별로 ➔ targetDate에 ChallengeLog 없는 멤버 식별 ➔ PenaltyLog(방 penaltyAmount 스냅샷) 레코드 생성 ➔ 해당 멤버 Streak 0 리셋
 
 ```java
-@Scheduled(cron = "0 59 23 * * *", zone = "Asia/Seoul")
-@Transactional
-public void closeDay() {
-    LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
-    // 1. 오늘 인증하지 않은 활성 멤버 조회 (N+1 방지: 단일 쿼리)
-    List<RoomMember> missed = roomMemberRepository.findMissedMembers(today);
-    for (RoomMember m : missed) {
-        // 2. 벌금 부과 (UNIQUE 제약으로 멱등성 보장)
-        penaltyLogRepository.save(PenaltyLog.of(m, today, m.getRoom().getPenaltyAmount()));
-        // 3. Streak 리셋
-        streakRepository.resetCurrent(m.getUser().getId(), m.getRoom().getId());
-    }
+@Scheduled(cron = "5 0 0 * * *", zone = "Asia/Seoul")
+public void closeYesterday() {
+    LocalDate targetDate = LocalDate.now(clock).minusDays(1);
+    dailyClosingService.closeDay(targetDate); // 방마다 별도 트랜잭션 (한 방 실패가 다른 방에 영향 X)
 }
 ```
 
@@ -234,14 +226,15 @@ public void closeDay() {
 ```sql
 SELECT rm.* FROM room_member rm
 LEFT JOIN challenge_log cl
-  ON cl.user_id = rm.user_id AND cl.room_id = rm.room_id AND cl.log_date = :today
-WHERE cl.id IS NULL
-  AND DATE(rm.joined_at) < :today;  -- 참여 당일 제외 (정책 확정 시)
+  ON cl.user_id = rm.user_id AND cl.room_id = rm.room_id AND cl.log_date = :targetDate
+WHERE rm.room_id = :roomId
+  AND cl.id IS NULL
+  AND rm.joined_at < :targetDate 00:00:00;  -- 참여 당일 면제 (2.6 MVP 제안)
 ```
 
-> ⚠️ **기술 리스크 — 23:59:00 ~ 23:59:59 사이 업로드**
-> 스케줄러가 23:59:00에 돌면, 그 이후 59초 동안 업로드한 사용자는 인증은 되었는데 벌금도 부과되는 모순이 생김.
-> **권장 대안:** Cron을 `5 0 0 * * *`(다음 날 00:00:05)로 변경하고 `targetDate = 어제`로 처리. 또는 23:59에 실행하되 23:59:00 이후 업로드를 차단. → 결정 필요
+> ✅ **결정 — 23:59:00 ~ 23:59:59 사이 업로드 문제**
+> 23:59에 실행하면 그 뒤 59초 동안 올린 인증이 벌금과 동시에 기록되는 모순이 생긴다.
+> → 마감 시각(23:59:59)이 완전히 지난 **다음 날 00:00:05에 전날을 마감**하는 방식으로 확정. 화면 타이머도 23:59:59 기준 그대로.
 
 ### 5.3 정산 리포트 (Settlement)
 **흐름:** Room별 미정산 PenaltyLog 합산 ➔ 멤버별 벌금 랭킹 반환 ➔ 송금 가이드 텍스트 생성
