@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!-- 방 안의 [홈] [정산] 탭. 현재 탭은 컨트롤러가 넣어준 ${tab}으로 강조 -->
+<nav th:fragment="tabs" class="mb-4 grid grid-cols-2 rounded-xl bg-slate-200/70 p-1 text-sm font-semibold">
+    <a th:href="@{/rooms/{id}(id=${roomId})}"
+       th:classappend="${tab == 'dashboard'} ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'"
+       class="rounded-lg py-2 text-center">🏠 홈</a>
+    <a th:href="@{/rooms/{id}/settlement(id=${roomId})}"
+       th:classappend="${tab == 'settlement'} ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'"
+       class="rounded-lg py-2 text-center">💸 정산</a>
+</nav>
+</html>

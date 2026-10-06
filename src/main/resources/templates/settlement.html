@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('정산')}"></head>
+<body class="bg-slate-50 text-slate-900">
+<main id="app" class="mx-auto min-h-screen max-w-md px-4 pb-16 pt-4" th:data-room-id="${roomId}">
+
+    <header class="mb-4">
+        <a href="/" class="text-sm text-slate-500">← 내 방</a>
+        <h1 id="room-title" class="mt-2 text-2xl font-extrabold leading-tight">불러오는 중…</h1>
+        <p id="period" class="mt-1 text-xs text-slate-400"></p>
+    </header>
+
+    <nav th:replace="~{fragments/room-tabs :: tabs}"></nav>
+
+    <!-- 💰 총 벌금 풀 -->
+    <section class="mb-3 rounded-2xl bg-slate-900 p-5 text-white shadow-sm">
+        <p class="text-xs opacity-70">💰 미정산 벌금 풀 → <span id="host-name"></span>(방장)에게</p>
+        <p id="total-pool" class="mt-1 text-4xl font-bold">-</p>
+    </section>
+
+    <!-- 벌금 랭킹 -->
+    <section class="mb-3 rounded-2xl bg-white p-4 shadow-sm">
+        <h2 class="mb-2 text-sm font-semibold">🐢 벌금 랭킹</h2>
+        <ol id="penalty-ranking" class="divide-y divide-slate-100"></ol>
+    </section>
+
+    <!-- Streak 랭킹 -->
+    <section class="mb-3 rounded-2xl bg-white p-4 shadow-sm">
+        <h2 class="mb-2 text-sm font-semibold">🔥 Streak 랭킹 <span class="font-normal text-slate-400">(현재 / 최고)</span></h2>
+        <ol id="streak-ranking" class="divide-y divide-slate-100"></ol>
+    </section>
+
+    <!-- 송금 가이드 -->
+    <section class="mb-3 rounded-2xl bg-white p-4 shadow-sm">
+        <div class="mb-2 flex items-center justify-between">
+            <h2 class="text-sm font-semibold">💬 송금 가이드</h2>
+            <button id="copy-btn" type="button" class="rounded-full bg-yellow-300 px-3 py-1 text-xs font-bold text-slate-900 active:bg-yellow-400">
+                복사하기
+            </button>
+        </div>
+        <pre id="guide-text" class="whitespace-pre-wrap break-words rounded-xl bg-slate-50 p-3 font-sans text-sm leading-relaxed"></pre>
+    </section>
+
+    <!-- HOST 전용 -->
+    <section id="host-actions" class="hidden">
+        <button id="settle-btn" type="button"
+                class="w-full rounded-2xl bg-orange-500 py-4 text-lg font-bold text-white shadow-lg active:bg-orange-600 disabled:bg-slate-300 disabled:shadow-none">
+            ✅ 정산 완료 처리
+        </button>
+        <p class="mt-2 text-center text-xs text-slate-400">송금을 다 받은 뒤 눌러 주세요. 위 기간의 벌금이 정산 완료로 바뀝니다.</p>
+    </section>
+</main>
+
+<script src="/js/settlement.js"></script>
+</body>
+</html>

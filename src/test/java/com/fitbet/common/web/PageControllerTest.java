@@ -90,6 +90,18 @@ class PageControllerTest {
     }
 
     @Test
+    void 정산_탭도_멤버만_볼_수_있다() throws Exception {
+        mockMvc.perform(get("/rooms/{id}/settlement", room.getId()).session(sessionOf(host)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("settlement"))
+                .andExpect(content().string(containsString("정산 완료 처리")));
+
+        User outsider = userRepository.save(User.create("외부인"));
+        mockMvc.perform(get("/rooms/{id}/settlement", room.getId()).session(sessionOf(outsider)))
+                .andExpect(redirectedUrl("/"));
+    }
+
+    @Test
     void 외부_주소로의_next는_버린다_오픈_리다이렉트_방지() throws Exception {
         mockMvc.perform(get("/").param("next", "//evil.com"))
                 .andExpect(model().attribute("next", nullValue()));

@@ -25,7 +25,9 @@ public enum ErrorCode {
 
     CHALLENGE_NOT_FOUND(HttpStatus.NOT_FOUND, "인증 글을 찾을 수 없습니다."),
     CANNOT_REACT_TO_OWN(HttpStatus.BAD_REQUEST, "내 인증 글에는 리액션할 수 없습니다."),
-    REACTION_CONFLICT(HttpStatus.CONFLICT, "리액션이 동시에 처리되었습니다. 다시 시도해 주세요.");
+    REACTION_CONFLICT(HttpStatus.CONFLICT, "리액션이 동시에 처리되었습니다. 다시 시도해 주세요."),
+
+    HOST_ONLY(HttpStatus.FORBIDDEN, "방장만 할 수 있습니다.");
 
     private final HttpStatus status;
     private final String message;

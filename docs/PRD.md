@@ -248,7 +248,7 @@ GROUP BY u.id ORDER BY total DESC;
 
 **송금 가이드 텍스트 예시** (벌금 풀 → 방장 수령 정책 기준):
 ```text
-📢 [헬창들의 모임] 1주차 정산 리포트
+📢 [헬창들의 모임] 정산 리포트 (10/01 ~ 10/06)
 총 벌금 풀: 7,000원
 
 1위 🐢 민수 — 4,000원 (4일 미인증)
@@ -260,7 +260,11 @@ GROUP BY u.id ORDER BY total DESC;
 - 지훈 → 영진(방장): 2,000원
 - 서연 → 영진(방장): 1,000원
 ```
+- 정산 대상은 **미정산 PenaltyLog 전체**(시즌 정의 전까지). 제목의 기간은 미정산 벌금의 첫 날 ~ 마지막 날. (2026-10-06 확정)
+- 벌금이 같으면 **공동 순위**(1, 1, 3위 방식).
+- 방장 본인 벌금은 송금 대상이 아니라 "본인 벌금 N원은 송금 없이 풀에 포함"으로 안내.
 - 방장이 "정산 완료" 처리 시 해당 기간 PenaltyLog `isSettled = true` 일괄 업데이트.
+  - 요청 바디 `{"until": "2026-10-06"}` = 방장이 본 리포트의 마지막 날짜. **until 이하만** 정산해서, 리포트를 본 뒤 스케줄러가 새로 만든 벌금이 확인 없이 정산되는 일을 막는다.
 
 ---
 
@@ -279,7 +283,7 @@ GROUP BY u.id ORDER BY total DESC;
 - 간단 한 줄 메모 (최대 100자)
 - 제출 버튼 (업로드 중 중복 클릭 방지, 로딩 표시)
 
-### 6.3 정산 탭
+### 6.3 정산 탭 (`/rooms/{roomId}/settlement`, 대시보드와 [홈] [정산] 탭으로 이동)
 - 멤버별 **누적 벌금액 랭킹**
 - 🔥 Streak 랭킹 (currentStreak / maxStreak)
 - **송금 가이드 텍스트** + [복사하기] 버튼 (카톡 공유용)
@@ -302,7 +306,7 @@ GROUP BY u.id ORDER BY total DESC;
 | POST | `/api/rooms/{roomId}/challenges` | 인증 업로드 (multipart/form-data) |
 | POST | `/api/challenges/{logId}/reactions` | 인정/의심 리액션 등록·변경 |
 | GET | `/api/rooms/{roomId}/settlement` | 정산 리포트 조회 |
-| PATCH | `/api/rooms/{roomId}/settlement` | 정산 완료 처리 (HOST 전용) |
+| PATCH | `/api/rooms/{roomId}/settlement` | 정산 완료 처리 (HOST 전용, body: `{"until": "yyyy-MM-dd"}`) |
 
 ---
 

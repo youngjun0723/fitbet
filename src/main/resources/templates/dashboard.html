@@ -17,6 +17,8 @@
         <p id="room-meta" class="mt-1 text-xs text-slate-400"></p>
     </header>
 
+    <nav th:replace="~{fragments/room-tabs :: tabs}"></nav>
+
     <!-- ⏱️ 마감 타이머 -->
     <section id="timer-card" class="mb-3 rounded-2xl bg-slate-900 p-5 text-white shadow-sm transition-colors">
         <p class="text-xs opacity-70">오늘 인증 마감까지</p>

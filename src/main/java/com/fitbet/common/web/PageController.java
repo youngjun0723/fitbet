@@ -72,6 +72,19 @@ public class PageController {
     public String dashboard(@SessionAttribute(name = LOGIN_KEY, required = false) Long userId,
                             @PathVariable Long roomId,
                             HttpServletRequest request, Model model) {
+        return roomPage("dashboard", userId, roomId, request, model);
+    }
+
+    /** PRD 6.3 정산 탭 */
+    @GetMapping("/rooms/{roomId}/settlement")
+    public String settlement(@SessionAttribute(name = LOGIN_KEY, required = false) Long userId,
+                             @PathVariable Long roomId,
+                             HttpServletRequest request, Model model) {
+        return roomPage("settlement", userId, roomId, request, model);
+    }
+
+    /** 방 안의 페이지 공통: 로그인 → 멤버 확인 → 템플릿 */
+    private String roomPage(String view, Long userId, Long roomId, HttpServletRequest request, Model model) {
         if (userId == null) {
             return redirectToLogin(request);
         }
@@ -79,7 +92,8 @@ public class PageController {
             return "redirect:/";
         }
         model.addAttribute("roomId", roomId);
-        return "dashboard";
+        model.addAttribute("tab", view);
+        return view;
     }
 
     /** 로그인 후 원래 보던 페이지로 돌아오도록 현재 주소를 next 파라미터로 넘긴다. */
