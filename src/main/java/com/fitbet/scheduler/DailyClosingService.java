@@ -24,6 +24,18 @@ public class DailyClosingService {
     private final RoomRepository roomRepository;
     private final RoomDayCloser roomDayCloser;
 
+    /**
+     * 따라잡기(catch-up): today 직전 days일을 오래된 날부터 차례로 마감한다.
+     * 마감은 멱등이라 이미 처리된 날은 0건으로 지나가고, 서버가 꺼져 있어 빠졌던 날만 채워진다.
+     */
+    public List<ClosingResult> closeRecentDays(LocalDate today, int days) {
+        List<ClosingResult> results = new ArrayList<>();
+        for (int i = days; i >= 1; i--) {
+            results.add(closeDay(today.minusDays(i)));
+        }
+        return results;
+    }
+
     public ClosingResult closeDay(LocalDate targetDate) {
         List<Long> roomIds = roomRepository.findAllIds();
         int penalized = 0;
@@ -39,7 +51,11 @@ public class DailyClosingService {
         }
 
         ClosingResult result = new ClosingResult(targetDate, roomIds.size(), penalized, failedRoomIds);
-        log.info("[마감] {}", result);
+        if (penalized > 0 || !failedRoomIds.isEmpty()) {
+            log.info("[마감] {}", result);
+        } else {
+            log.debug("[마감] {} 변경 없음", targetDate); // 이미 마감된 날 (따라잡기에서 매일 6일치는 여기로)
+        }
         return result;
     }
 

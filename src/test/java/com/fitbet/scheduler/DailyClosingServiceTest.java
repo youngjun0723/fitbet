@@ -5,6 +5,7 @@ import static org.assertj.core.groups.Tuple.tuple;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -152,6 +153,32 @@ class DailyClosingServiceTest {
 
         assertThat(result.currentStreak()).isEqualTo(1);
         assertThat(result.maxStreak()).isEqualTo(1);
+    }
+
+    @Test
+    void 서버가_꺼져서_빠진_날은_따라잡기로_채우고_그_뒤_인증한_사람의_Streak은_지킨다() {
+        // 10/6, 10/7 자정에 서버가 꺼져 있어서 마감이 한 번도 안 돌았다
+        clock.setTo(OCT7.plusDays(1).atTime(10, 0));                          // 10/8
+        challengeService.upload(jihun.getId(), room.getId(), photo(), null); // 지훈 10/8 인증 → streak 1
+
+        // 10/9 00:00:05 서버 복구 → 최근 7일(10/2~10/8) 따라잡기
+        List<ClosingResult> results = dailyClosingService.closeRecentDays(OCT7.plusDays(2), 7);
+
+        assertThat(results).extracting(ClosingResult::targetDate)
+                .containsExactly(LocalDate.of(2026, 10, 2), LocalDate.of(2026, 10, 3), LocalDate.of(2026, 10, 4),
+                        OCT5, OCT6, OCT7, OCT7.plusDays(1));
+        assertThat(results).extracting(ClosingResult::penalizedCount)
+                .containsExactly(0, 0, 0, 0, 2, 4, 3); // 10/5는 전원 참여 당일, 10/6 영진·지훈, 10/7 전원, 10/8 지훈 제외
+
+        em.flush();
+        em.clear();
+        assertThat(streakOf(jihun).getCurrentStreak()).isEqualTo(1); // 10/8 인증 이후라 10/6·7 늦은 마감에도 유지
+        assertThat(streakOf(minsu).getCurrentStreak()).isZero();     // 10/6 인증 후 10/7 놓침
+        assertThat(streakOf(minsu).getMaxStreak()).isEqualTo(1);
+
+        // 한 번 더 돌려도 추가 벌금 없음 (매일 7일치를 다시 훑어도 안전한 이유)
+        assertThat(dailyClosingService.closeRecentDays(OCT7.plusDays(2), 7))
+                .extracting(ClosingResult::penalizedCount).containsOnly(0);
     }
 
     private Room createRoomAt(LocalDate date, User host, String title) {

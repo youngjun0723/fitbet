@@ -70,13 +70,34 @@ class StreakTest {
         streak.recordVerification(D1.plusDays(1));
         streak.recordVerification(D1.plusDays(2)); // 3일 연속
 
-        streak.reset(); // D+3 미인증으로 마감
+        streak.resetForMissedDay(D1.plusDays(3)); // D+3 미인증으로 마감
         assertThat(streak.getCurrentStreak()).isZero();
         assertThat(streak.getMaxStreak()).isEqualTo(3);
 
         streak.recordVerification(D1.plusDays(4));
         assertThat(streak.getCurrentStreak()).isEqualTo(1);
         assertThat(streak.getMaxStreak()).isEqualTo(3);
+    }
+
+    @Test
+    void 놓친_날_이후에_이미_인증했다면_늦은_마감이_와도_현재_기록은_지킨다() {
+        Streak streak = newStreak();
+        // D+1을 놓쳤는데 서버가 꺼져 있어서 마감이 안 됐고, D+2, D+3은 인증함
+        streak.recordVerification(D1.plusDays(2));
+        streak.recordVerification(D1.plusDays(3));
+
+        streak.resetForMissedDay(D1.plusDays(1)); // 서버 복구 후 D+1을 뒤늦게 마감
+
+        assertThat(streak.getCurrentStreak()).isEqualTo(2);
+    }
+
+    @Test
+    void 처음부터_인증한_적_없으면_그냥_0() {
+        Streak streak = newStreak();
+
+        streak.resetForMissedDay(D1);
+
+        assertThat(streak.getCurrentStreak()).isZero();
     }
 
     @Test

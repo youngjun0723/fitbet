@@ -71,8 +71,16 @@ public class Streak {
         lastVerifiedDate = today;
     }
 
-    /** PRD 2.3: 하루라도 실패하면 즉시 0. maxStreak은 유지. (M3 마감 스케줄러에서 사용) */
-    public void reset() {
+    /**
+     * PRD 2.3: missedDate에 인증하지 않았으면 연속 기록 0 (maxStreak은 유지).
+     * 단, missedDate "이후"에 이미 인증했다면 지금의 연속 기록은 그 뒤에 새로 시작된 것이므로 건드리지 않는다.
+     *   - 서버 장애로 며칠 전 날짜를 뒤늦게 마감(catch-up)할 때
+     *   - 00:00:00~00:00:05 사이(스케줄러 실행 전)에 오늘 인증한 경우
+     */
+    public void resetForMissedDay(LocalDate missedDate) {
+        if (lastVerifiedDate != null && lastVerifiedDate.isAfter(missedDate)) {
+            return;
+        }
         currentStreak = 0;
     }
 }

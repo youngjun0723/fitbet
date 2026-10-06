@@ -48,7 +48,7 @@ public class RoomDayCloser {
             penaltyLogRepository.save(PenaltyLog.of(member.getUser(), member.getRoom(), targetDate));
             Streak streak = streakByUserId.get(member.getUser().getId());
             if (streak != null) {
-                streak.reset(); // 변경 감지 → 커밋 시 UPDATE
+                streak.resetForMissedDay(targetDate); // 변경 감지 → 커밋 시 UPDATE
             }
         }
         return missed.size();
