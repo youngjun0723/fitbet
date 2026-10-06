@@ -38,3 +38,7 @@ out/
 
 ### FitBet uploads ###
 uploads/
+
+### Deploy secrets & backups ###
+.env
+backups/

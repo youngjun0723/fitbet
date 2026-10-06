@@ -1,0 +1,10 @@
+# 이미지 빌드에 필요 없는 것 (빌드 속도 + 비밀 정보 유출 방지)
+.git
+.gradle
+.idea
+.vscode
+build
+uploads
+backups
+.env
+*.iml

@@ -78,6 +78,7 @@
 | Frontend | Spring Boot Thymeleaf + Tailwind CSS (CDN), Vanilla JS |
 | Build | Gradle |
 | 파일 저장 | 로컬 디스크 저장 + 정적 리소스 URL 매핑 (추후 S3 교체 가능하도록 `StorageService` 인터페이스로 추상화) |
+| 배포 | 서버 1대 + Docker Compose (앱 + MariaDB + Caddy 자동 HTTPS). 절차는 `docs/DEPLOY.md` |
 
 ### 3.1 패키지 구조 (제안)
 ```text
@@ -216,11 +217,19 @@ erDiagram
 
 ```java
 @Scheduled(cron = "5 0 0 * * *", zone = "Asia/Seoul")
-public void closeYesterday() {
-    LocalDate targetDate = LocalDate.now(clock).minusDays(1);
-    dailyClosingService.closeDay(targetDate); // 방마다 별도 트랜잭션 (한 방 실패가 다른 방에 영향 X)
+public void closeRecentDays() {
+    // 어제 하루가 아니라 최근 7일을 마감 (멱등이라 이미 처리된 날은 0건)
+    dailyClosingService.closeRecentDays(LocalDate.now(clock), 7); // 방마다 별도 트랜잭션
 }
+
+@EventListener(ApplicationReadyEvent.class) // 서버 기동 직후에도 1회
+public void catchUpOnStartup() { closeRecentDays(); }
 ```
+
+**따라잡기(catch-up)** (2026-10-06 확정)
+- 서버가 자정에 꺼져 있어 빠진 마감을 다음 실행/재기동 때 채운다. 기본 7일 (`fitbet.closing.catch-up-days`).
+- Streak 리셋은 **놓친 날 이후에 인증 기록이 없을 때만** (`lastVerifiedDate`가 놓친 날보다 뒤면 유지). 뒤늦은 마감이 그 사이 새로 쌓인 연속 기록을 지우지 않게 하기 위함.
+- 서버 여러 대 운영 시에는 ShedLock 등으로 한 대만 실행 (MVP는 1대).
 
 미인증자 조회 쿼리 예시:
 ```sql

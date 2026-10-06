@@ -1,0 +1,12 @@
+# Caddy: 도메인만 적으면 HTTPS 인증서를 자동으로 받아 오고 갱신까지 해 준다.
+# HTTPS가 필요한 이유: 클립보드 복사(navigator.clipboard)는 보안 연결에서만 동작하고, 세션 쿠키도 secure로 설정했다.
+{$SITE_ADDRESS} {
+	encode gzip
+
+	# 업로드 10MB + 여유분. 이보다 큰 요청은 앱까지 오기 전에 차단
+	request_body {
+		max_size 12MB
+	}
+
+	reverse_proxy app:8080
+}

@@ -1,0 +1,58 @@
+# 서버 한 대에 앱 + DB + HTTPS 프록시를 함께 띄운다.  사용법: docs/DEPLOY.md
+# 값은 같은 폴더의 .env 파일에서 읽는다 (.env.example 참고, .env는 git에 올리지 않음)
+services:
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: fitbet
+      MARIADB_USER: ${DB_USERNAME}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      TZ: Asia/Seoul
+    # PRD 8: DB 타임존도 서울. 한글·이모지 메모를 위해 utf8mb4
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-time-zone=+09:00
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # ports를 열지 않는다 → DB는 같은 compose 네트워크(app)에서만 접근 가능, 인터넷에 노출 X
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy   # DB가 실제로 접속 가능해진 뒤에 앱 시작
+    environment:
+      DB_URL: jdbc:mariadb://db:3306/fitbet
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      TZ: Asia/Seoul
+    volumes:
+      - uploads:/data/uploads        # 인증 사진 (컨테이너를 새로 빌드해도 유지)
+    mem_limit: 700m
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS}  # 예: fitbet.duckdns.org → Let's Encrypt 인증서 자동 발급/갱신
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  db-data:
+  uploads:
+  caddy-data:
+  caddy-config:
