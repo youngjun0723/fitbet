@@ -1,6 +1,7 @@
 package com.fitbet.common.exception;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -31,6 +32,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ErrorResponse> handleMaxUploadSize(MaxUploadSizeExceededException e) {
         return toResponse(ErrorCode.FILE_TOO_LARGE);
+    }
+
+    /** JSON 문법 오류, enum에 없는 값({"type":"LIKE"}) 등 바디를 객체로 못 바꿀 때 */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleUnreadable(HttpMessageNotReadableException e) {
+        return toResponse(ErrorCode.INVALID_INPUT);
     }
 
     @ExceptionHandler(MissingServletRequestPartException.class)

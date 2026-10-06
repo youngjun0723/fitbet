@@ -109,10 +109,15 @@ public class DashboardService {
         List<ReactionView> reactions = reactionsByLogId.getOrDefault(cl.getId(), List.of());
         long approve = reactions.stream().filter(r -> r.type() == ReactionType.APPROVE).count();
         long doubt = reactions.size() - approve;
+        ReactionType myReaction = reactions.stream()
+                .filter(r -> r.userId().equals(myId))
+                .map(ReactionView::type)
+                .findFirst()
+                .orElse(null);
         Long authorId = cl.getUser().getId();
         return new FeedItem(cl.getId(), authorId, cl.getUser().getUsername(), cl.getPhotoUrl(), cl.getMemo(),
                 cl.getCreatedAt(), currentStreakOf(streakByUserId, authorId),
-                approve, doubt, authorId.equals(myId));
+                approve, doubt, authorId.equals(myId), myReaction);
     }
 
     private int currentStreakOf(Map<Long, Streak> streakByUserId, Long userId) {

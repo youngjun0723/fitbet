@@ -118,6 +118,12 @@ class DashboardServiceTest {
         assertThat(item.approveCount()).isEqualTo(2);
         assertThat(item.doubtCount()).isEqualTo(1);
         assertThat(item.mine()).isFalse();
+        assertThat(item.myReaction()).isEqualTo(ReactionType.APPROVE); // 보는 사람(영진)이 남긴 것
+
+        DashboardResponse asJihun = dashboardService.getDashboard(jihun.getId(), room.getId());
+        assertThat(asJihun.feed().get(0).myReaction()).isEqualTo(ReactionType.APPROVE);
+        DashboardResponse asMinsu = dashboardService.getDashboard(minsu.getId(), room.getId());
+        assertThat(asMinsu.feed().get(0).myReaction()).isNull(); // 본인은 리액션 안 함
     }
 
     @Test

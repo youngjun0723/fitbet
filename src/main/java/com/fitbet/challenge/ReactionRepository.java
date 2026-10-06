@@ -2,12 +2,15 @@ package com.fitbet.challenge;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface ReactionRepository extends JpaRepository<Reaction, Long> {
+
+    Optional<Reaction> findByChallengeLogIdAndUserId(Long challengeLogId, Long userId);
 
     /**
      * DTO projection: 엔티티 대신 필요한 컬럼 3개만 바로 record로 받는다.

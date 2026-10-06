@@ -74,25 +74,55 @@
     const body = el('div', 'p-3');
     if (item.memo) body.append(el('p', 'mb-2', item.memo));
 
-    // 인정/의심 리액션은 M3에서 활성화 — 지금은 카운트만 표시
-    const actions = el('div', 'flex gap-2');
-    actions.append(
-      reactionButton('👍 인정', item.approveCount),
-      reactionButton('🤔 의심', item.doubtCount),
-      el('time', 'ml-auto self-center text-xs text-slate-400', formatTime(item.createdAt)),
-    );
+    const actions = el('div', 'flex items-center gap-2');
+    const time = el('time', 'ml-auto text-xs text-slate-400', formatTime(item.createdAt));
+    renderReactions(actions, item, time);
     body.append(actions);
 
     card.append(head, img, body);
     return card;
   }
 
-  function reactionButton(label, count) {
-    const btn = el('button', 'rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-600 disabled:opacity-60', `${label} ${count}`);
-    btn.type = 'button';
-    btn.disabled = true;
-    btn.title = '리액션은 곧 열려요';
-    return btn;
+  // ---------------------------------------------------------------- 인정/의심 리액션 (PRD 2.5)
+  const REACTIONS = [
+    { type: 'APPROVE', label: '👍 인정', countKey: 'approveCount', active: 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300' },
+    { type: 'DOUBT', label: '🤔 의심', countKey: 'doubtCount', active: 'bg-amber-100 text-amber-700 ring-1 ring-amber-300' },
+  ];
+
+  function renderReactions(container, item, trailing) {
+    container.replaceChildren();
+    for (const r of REACTIONS) {
+      const selected = item.myReaction === r.type;
+      const btn = el('button',
+        `rounded-full px-3 py-1 text-sm transition ${selected ? r.active : 'bg-slate-100 text-slate-600'} disabled:opacity-60`,
+        `${r.label} ${item[r.countKey]}`);
+      btn.type = 'button';
+      btn.setAttribute('aria-pressed', String(selected));
+      if (item.mine) {
+        btn.disabled = true; // 본인 글에는 리액션 불가
+        btn.title = '내 인증 글에는 리액션할 수 없어요';
+      } else {
+        btn.addEventListener('click', () => react(container, item, r.type, trailing));
+      }
+      container.append(btn);
+    }
+    container.append(trailing);
+  }
+
+  async function react(container, item, type, trailing) {
+    if (item.myReaction === type) return; // 같은 걸 또 누르면 요청 생략
+    container.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+    try {
+      const result = await api(`/api/challenges/${item.logId}/reactions`, { method: 'POST', body: { type } });
+      Object.assign(item, {
+        approveCount: result.approveCount,
+        doubtCount: result.doubtCount,
+        myReaction: result.myReaction,
+      });
+    } catch (err) {
+      alert(err.message);
+    }
+    renderReactions(container, item, trailing); // 전체 새로고침 없이 이 카드 버튼만 다시 그림
   }
 
   function renderCta(verifiedToday) {

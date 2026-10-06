@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import com.fitbet.challenge.ReactionType;
+
 /** GET /api/rooms/{roomId}/dashboard 응답 (PRD 6.1 홈 대시보드에 필요한 데이터 전부) */
 public record DashboardResponse(
         RoomInfo room,
@@ -30,6 +32,7 @@ public record DashboardResponse(
 
     public record FeedItem(Long logId, Long userId, String username, String photoUrl, String memo,
                            LocalDateTime createdAt, int currentStreak,
-                           long approveCount, long doubtCount, boolean mine) {
+                           long approveCount, long doubtCount, boolean mine,
+                           ReactionType myReaction) { // 내가 남긴 리액션 (없으면 null)
     }
 }
