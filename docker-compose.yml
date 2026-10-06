@@ -1,5 +1,9 @@
-# 서버 한 대에 앱 + DB + HTTPS 프록시를 함께 띄운다.  사용법: docs/DEPLOY.md
+# 한 대의 머신에 앱 + DB + 외부 공개 통로를 함께 띄운다.  사용법: docs/DEPLOY.md
 # 값은 같은 폴더의 .env 파일에서 읽는다 (.env.example 참고, .env는 git에 올리지 않음)
+#
+# 외부 공개 방식은 .env의 COMPOSE_PROFILES로 하나만 고른다 (profiles가 붙은 서비스는 그 프로필일 때만 뜬다)
+#   - tunnel : 집 PC + Cloudflare Tunnel  → 포트포워딩 없이 Cloudflare가 HTTPS 처리 (현재 사용)
+#   - caddy  : 공인 IP가 있는 VPS          → Caddy가 80/443을 열고 인증서 자동 발급
 services:
   db:
     image: mariadb:11.4
@@ -36,8 +40,23 @@ services:
       - uploads:/data/uploads        # 인증 사진 (컨테이너를 새로 빌드해도 유지)
     mem_limit: 700m
 
+  # ---- 공개 방식 A: Cloudflare Tunnel (집 PC) ----
+  # cloudflared가 Cloudflare로 "나가는" 연결을 만들어 두고, 들어온 요청을 app:8080으로 넘긴다.
+  # 그래서 공유기 포트포워딩도, PC의 포트 개방도 필요 없다. HTTPS 인증서는 Cloudflare가 처리.
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}   # Cloudflare 대시보드에서 터널 만들 때 발급되는 토큰
+    depends_on:
+      - app
+
+  # ---- 공개 방식 B: Caddy (공인 IP가 있는 VPS) ----
   caddy:
     image: caddy:2
+    profiles: ["caddy"]
     restart: unless-stopped
     depends_on:
       - app

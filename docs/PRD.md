@@ -78,7 +78,7 @@
 | Frontend | Spring Boot Thymeleaf + Tailwind CSS (CDN), Vanilla JS |
 | Build | Gradle |
 | 파일 저장 | 로컬 디스크 저장 + 정적 리소스 URL 매핑 (추후 S3 교체 가능하도록 `StorageService` 인터페이스로 추상화) |
-| 배포 | 서버 1대 + Docker Compose (앱 + MariaDB + Caddy 자동 HTTPS). 절차는 `docs/DEPLOY.md` |
+| 배포 | 집 PC(Windows) + Docker Compose(앱 + MariaDB) + **Cloudflare Tunnel**(HTTPS, 포트포워딩 없음). VPS로 옮길 땐 Caddy 프로필. 절차는 `docs/DEPLOY.md` |
 
 ### 3.1 패키지 구조 (제안)
 ```text
